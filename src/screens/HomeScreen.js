@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, StatusBar, Image } from 'react-nati
 import axios from 'axios';
 
 // Unsplash API setup
-const UNSPLASH_ACCESS_KEY = 'kkCmW2WRvd6zfC8qQOk7-snvYog3_JTQIJs7DLRb29U'; // Replace with your own API key
+const UNSPLASH_ACCESS_KEY = 'WwrKlOBcmigCj7gNsNXMKMrUFVvvwRwr3O4wWB7hA-E'; // Replace with your own API key
 const UNSPLASH_API_URL = 'https://api.unsplash.com/photos/?client_id=' + UNSPLASH_ACCESS_KEY;
 
 const Slider = () => {

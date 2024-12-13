@@ -11,6 +11,7 @@ const ImageScreen = ({ route, navigation }) => {
   const imageRef = useRef(null);
   const [capturedImageUri, setCapturedImageUri] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const [svgPathData, setSvgPathData] = useState(null);
 
   useLayoutEffect(() => {
@@ -30,7 +31,7 @@ const ImageScreen = ({ route, navigation }) => {
         setCapturedImageUri(uri);
         convertImageToSVG(uri);
       } catch (error) {
-        console.error('Captasdfsdfure failed', error);
+        console.error('Capture failed', error);
         Alert.alert('Error', 'Failed to capture the image.');
       }
     } else {
@@ -66,39 +67,48 @@ const ImageScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageLoadError(false);
+  };
+
+  console.log(imageUrl)
+
+  const handleImageError = () => {
+    setImageLoadError(true);
+    setImageLoaded(false);
+  };
+
   return (
     <View style={styles.container}>
-      <View ref={imageRef} style={styles.imageContainer}>
-        {!imageLoaded ? (
-          <ActivityIndicator size="large" color="#FF6347" />
-        ) : (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            onLoad={() => setImageLoaded(true)}
-          />
-        )}
-      </View>
+  <TouchableOpacity ref={imageRef} style={styles.imageContainer}>
+    <Image
+      source={{ uri: imageUrl }}
+      style={styles.image}
+      onLoad={handleImageLoad}
+      onError={handleImageError}
+    />
+  </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={captureImage}>
+  <TouchableOpacity style={styles.button} onPress={captureImage} disabled={!imageLoaded || imageLoadError}>
+    <Text style={styles.buttonText}>
+      Hadi Çizelim! <Text style={styles.emoji}>✏️</Text>
+    </Text>
+  </TouchableOpacity>
+
+  {svgPathData && (
+    <>
+      <Svg height="300" width="100%" viewBox="0 0 100 100" style={styles.capturedImage}>
+        <Path d={svgPathData} fill="none" stroke="white" strokeWidth="1" />
+      </Svg>
+      <TouchableOpacity style={styles.button} onPress={writeToNFC}>
         <Text style={styles.buttonText}>
-          Hadi Çizelim! <Text style={styles.emoji}>✏️</Text>
+          NFC'ye Aktar <Text style={styles.emoji}>📲</Text>
         </Text>
       </TouchableOpacity>
-
-      {svgPathData && (
-        <>
-          <Svg height="300" width="100%" viewBox="0 0 100 100" style={styles.capturedImage}>
-            <Path d={svgPathData} fill="none" stroke="white" strokeWidth="1" />
-          </Svg>
-          <TouchableOpacity style={styles.button} onPress={writeToNFC}>
-            <Text style={styles.buttonText}>
-              NFC'ye Aktar <Text style={styles.emoji}>📲</Text>
-            </Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+    </>
+  )}
+</View>
   );
 };
 
@@ -143,6 +153,12 @@ const styles = StyleSheet.create({
     height: 300,
     resizeMode: 'contain',
     marginTop: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
