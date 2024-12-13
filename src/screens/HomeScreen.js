@@ -20,59 +20,89 @@ const Slider = () => {
         <View style={styles.imageBox}>
           <Text style={styles.emoji}>💀</Text>
         </View>
-        <View style={styles.imageBox}></View>
-        <View style={styles.imageBox}></View>
+        <View style={styles.imageBox}>
+            <Text style={styles.emoji}>💀</Text>
+        </View>
+        <View style={styles.imageBox}>
+            <Text style={styles.emoji}>💀</Text>
+        </View>
       </ScrollView>
     </View>
   );
 };
 
-const ImageGrid = () => {
-  const [images, setImages] = useState([]);
+const ImageGrid = ({ navigation }) => {
+    const [images, setImages] = useState([]);
+  
+    // Fetch images from Unsplash API
+    useEffect(() => {
+      axios
+        .get(UNSPLASH_API_URL)
+        .then((response) => {
+          setImages(response.data);
+        })
+        .catch((error) => {
+          console.error('Error fetching images from Unsplash:', error);
+        });
+    }, []);
+  
+    const handleImageClick = (imageUrl) => {
+      // Navigate to the ImageScreen and pass the image URL
+      navigation.navigate('ImageScreen', { imageUrl });
+    };
+  
+    return (
+      <View style={styles.imageGridContainer}>
+        <Text style={styles.gridTitle}>İlgini çekebilir</Text>
+  
+        {images.length > 0 ? (
+          images.reduce((acc, image, index) => {
+            if (index % 2 === 0) {
+              const nextImage = images[index + 1]; 
+              if (nextImage) {
+                acc.push(
+                  <View key={index} style={styles.imageRow}>
+                    <View style={styles.imageBox}>
+                      <Image
+                        source={{ uri: image.urls.small }}
+                        style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                        onTouchEnd={() => handleImageClick(image.urls.full)} // Handle image click
+                      />
+                    </View>
+                    <View style={styles.imageBox}>
+                      <Image
+                        source={{ uri: nextImage.urls.small }}
+                        style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                        onTouchEnd={() => handleImageClick(nextImage.urls.full)} // Handle image click
+                      />
+                    </View>
+                  </View>
+                );
+              } else {
+                acc.push(
+                  <View key={index} style={styles.imageRow}>
+                    <View style={styles.imageBox}>
+                      <Image
+                        source={{ uri: image.urls.small }}
+                        style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                        onTouchEnd={() => handleImageClick(image.urls.full)} // Handle image click
+                      />
+                    </View>
+                  </View>
+                );
+              }
+            }
+            return acc;
+          }, [])
+        ) : (
+          <Text style={{ color: 'white' }}>Loading images...</Text>
+        )}
+      </View>
+    );
+  };
+  
 
-  // Fetch images from Unsplash API
-  useEffect(() => {
-    axios
-      .get(UNSPLASH_API_URL)
-      .then((response) => {
-        setImages(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching images from Unsplash:', error);
-      });
-  }, []);
-
-  return (
-    <View style={styles.imageGridContainer}>
-      <Text style={styles.gridTitle}>İlgini çekebilir</Text>
-
-      {images.length > 0 ? (
-        images.map((image, index) => (
-          <View key={index} style={styles.imageRow}>
-            <View style={styles.imageBox}>
-              <Image
-                source={{ uri: image.urls.small }}
-                style={{ width: '100%', height: '100%', borderRadius: 10 }}
-              />
-            </View>
-            {index + 1 < images.length && (
-              <View style={styles.imageBox}>
-                <Image
-                  source={{ uri: images[index + 1].urls.small }}
-                  style={{ width: '100%', height: '100%', borderRadius: 10 }}
-                />
-              </View>
-            )}
-          </View>
-        ))
-      ) : (
-        <Text style={{ color: 'white' }}>Loading images...</Text>
-      )}
-    </View>
-  );
-};
-
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   return (
     <ScrollView>
       <View style={styles.container}>
@@ -80,11 +110,13 @@ const HomeScreen = () => {
         <View style={styles.backgroundComponent}></View>
         <Text style={styles.title}>NFC APP</Text>
         <Slider />
-        <ImageGrid />
+        {/* navigation prop'unu ImageGrid'e geçiriyoruz */}
+        <ImageGrid navigation={navigation} />
       </View>
     </ScrollView>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
