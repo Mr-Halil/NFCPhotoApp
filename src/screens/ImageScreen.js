@@ -1,18 +1,13 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
-import { captureRef } from 'react-native-view-shot';
-import Svg, { Path } from 'react-native-svg';
 import NfcManager, { NfcTech } from 'react-native-nfc-manager';
-
-NfcManager.start();
 
 const ImageScreen = ({ route, navigation }) => {
   const { imageUrl } = route.params;
-  const imageRef = useRef(null);
-  const [capturedImageUri, setCapturedImageUri] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [svgPathData, setSvgPathData] = useState(null);
+  const [imageSize, setImageSize] = useState({ width: '100%', height: 300 }); // Başlangıç boyutları
+  const [imageResized, setImageResized] = useState(false); // Yeni state, görselin boyutlandırılıp boyutlandırılmadığını kontrol eder
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -21,51 +16,18 @@ const ImageScreen = ({ route, navigation }) => {
     });
   }, [navigation]);
 
-  const captureImage = async () => {
-    if (imageRef.current && imageLoaded) {
-      try {
-        const uri = await captureRef(imageRef, {
-          format: 'png',
-          quality: 0.8,
-        });
-        setCapturedImageUri(uri);
-        convertImageToSVG(uri);
-      } catch (error) {
-        console.error('Capture failed', error);
-        Alert.alert('Error', 'Failed to capture the image.');
-      }
-    } else {
-      Alert.alert('Error', 'Image is not ready for capture.');
-    }
-  };
+  useEffect(() => {
+    NfcManager.start()
+      .then(() => {
+        console.log('NFC Manager started');
+      })
+      .catch((e) => console.log('Error starting NFC Manager:', e));
 
-  const convertImageToSVG = (imageUri) => {
-    // Mock conversion logic: Replace this with a real vectorization process.
-    const mockPathData = 'M10 10 H 90 V 90 H 10 L 10 10';
-    setSvgPathData(mockPathData);
-  };
-
-  const writeToNFC = async () => {
-    if (!svgPathData) {
-      Alert.alert('Error', 'No SVG data to write.');
-      return;
-    }
-
-    try {
-      await NfcManager.requestTechnology(NfcTech.Ndef);
-      const message = [{
-        type: 'text/plain',
-        payload: svgPathData,
-      }];
-      await NfcManager.ndefHandler.writeNdefMessage(message);
-      Alert.alert('Success', 'SVG data written to NFC tag!');
-    } catch (error) {
-      console.error('NFC write failed', error);
-      Alert.alert('Error', 'Failed to write to NFC tag.');
-    } finally {
-      NfcManager.cancelTechnologyRequest();
-    }
-  };
+    return () => {
+      NfcManager.stop();
+      NfcManager.setEventListener('stateChange', 'off');
+    };
+  }, []);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -77,38 +39,72 @@ const ImageScreen = ({ route, navigation }) => {
     setImageLoaded(false);
   };
 
+  const handleResizeImage = () => {
+    if (!imageResized) {
+      setImageSize({ width: 200, height: 416 });
+      setImageResized(true);
+    }
+  };
+
+  const handleNfcTransfer = async () => {
+    try {
+      // NFC ile aktarım işlemi
+      await NfcManager.setEventListener('stateChange', 'on');
+      
+      // NFC yazma işlemi
+      await NfcManager.requestTechnology(NfcTech.NfcA);
+      const data = imageUrl; // Aktarılacak görselin URL'si
+      const message = [{
+        type: 'text',
+        value: data,
+      }];
+      
+      await NfcManager.writeNfcTag(message);
+      Alert.alert('Başarılı', 'Görsel NFC ile aktarılıyor...');
+    } catch (error) {
+      console.log('NFC aktarım hatası: ', error);
+      Alert.alert('Hata', 'Görsel aktarımında bir hata oluştu.');
+    } finally {
+      await NfcManager.setEventListener('stateChange', 'off');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      <TouchableOpacity ref={imageRef} style={styles.imageContainer}>
+      <TouchableOpacity style={styles.imageContainer}>
         <Image
           source={{ uri: imageUrl }}
-          style={styles.image}
+          style={[styles.image, imageSize]} // Burada imageSize state'ini kullanıyoruz
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
       </TouchableOpacity>
 
-      {/* SVG image placed below the main image */}
-      {svgPathData && (
-        <>
-          <Svg height="400" width="100%" viewBox="0 0 100 100" style={styles.capturedImage}>
-            <Path d={svgPathData} fill="none" stroke="white" strokeWidth="1" />
-          </Svg>
-          <TouchableOpacity style={styles.button} onPress={writeToNFC}>
-            <Text style={styles.buttonText}>
-              Kılıfa Aktar <Text style={styles.emoji}>📲</Text>
-            </Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      {/* Button for capturing image */}
-      {!svgPathData && (
-        <TouchableOpacity style={styles.button} onPress={captureImage} disabled={!imageLoaded || imageLoadError}>
+      {!imageLoadError && !imageResized && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleResizeImage}
+          disabled={!imageLoaded}
+        >
           <Text style={styles.buttonText}>
             Hadi Çizelim! <Text style={styles.emoji}>✏️</Text>
           </Text>
         </TouchableOpacity>
+      )}
+
+      {imageResized && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleNfcTransfer}
+        >
+          <Text style={styles.buttonText}>
+            NFC ile Aktar <Text style={styles.emoji}>📲</Text>
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {imageLoadError && (
+        <Text style={styles.errorText}>Görsel yüklenirken bir hata oluştu.</Text>
       )}
     </ScrollView>
   );
@@ -121,13 +117,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 300, // Adjusted for image display
+    height: 300,
     justifyContent: 'center',
     alignItems: 'center',
   },
   image: {
-    width: '100%',
-    height: '100%',
     resizeMode: 'contain',
   },
   button: {
@@ -141,7 +135,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 20,
-    height: '100%',
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -149,12 +142,6 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 20,
     marginLeft: 10,
-  },
-  capturedImage: {
-    width: '100%',
-    height: 300, // Increased height for SVG display
-    resizeMode: 'contain',
-    marginTop: 20,
   },
   errorText: {
     color: 'red',
