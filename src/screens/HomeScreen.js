@@ -1,40 +1,73 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, StatusBar, Image } from 'react-native';
+import axios from 'axios';
 
-// Slider component (horizontal scrollable images)
+// Unsplash API setup
+const UNSPLASH_ACCESS_KEY = 'kkCmW2WRvd6zfC8qQOk7-snvYog3_JTQIJs7DLRb29U'; // Replace with your own API key
+const UNSPLASH_API_URL = 'https://api.unsplash.com/photos/?client_id=' + UNSPLASH_ACCESS_KEY;
+
 const Slider = () => {
   return (
     <View style={styles.sliderContainer}>
-      {/* Slider Title */}
       <Text style={styles.sliderTitle}>Kategoriler</Text>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View style={styles.imageBox}>
+          <Text style={styles.emoji}>🚀</Text>
+        </View>
+        <View style={styles.imageBox}>
+          <Text style={styles.emoji}>🍼</Text>
+        </View>
+        <View style={styles.imageBox}>
+          <Text style={styles.emoji}>💀</Text>
+        </View>
         <View style={styles.imageBox}></View>
         <View style={styles.imageBox}></View>
-        <View style={styles.imageBox}></View>
-        <View style={styles.imageBox}></View>
-        <View style={styles.imageBox}></View>
-        {/* To add more images here */}
       </ScrollView>
     </View>
   );
 };
 
 const ImageGrid = () => {
-  const images = new Array(5).fill(null); // Create an array of 10 images
+  const [images, setImages] = useState([]);
+
+  // Fetch images from Unsplash API
+  useEffect(() => {
+    axios
+      .get(UNSPLASH_API_URL)
+      .then((response) => {
+        setImages(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching images from Unsplash:', error);
+      });
+  }, []);
 
   return (
     <View style={styles.imageGridContainer}>
       <Text style={styles.gridTitle}>İlgini çekebilir</Text>
-      
-      {images.map((_, index) => {
-        return (
+
+      {images.length > 0 ? (
+        images.map((image, index) => (
           <View key={index} style={styles.imageRow}>
-            <View style={styles.imageBox}></View>
-            <View style={styles.imageBox}></View>
+            <View style={styles.imageBox}>
+              <Image
+                source={{ uri: image.urls.small }}
+                style={{ width: '100%', height: '100%', borderRadius: 10 }}
+              />
+            </View>
+            {index + 1 < images.length && (
+              <View style={styles.imageBox}>
+                <Image
+                  source={{ uri: images[index + 1].urls.small }}
+                  style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                />
+              </View>
+            )}
           </View>
-        );
-      })}
+        ))
+      ) : (
+        <Text style={{ color: 'white' }}>Loading images...</Text>
+      )}
     </View>
   );
 };
@@ -43,16 +76,10 @@ const HomeScreen = () => {
   return (
     <ScrollView>
       <View style={styles.container}>
-        {/* Background Component */}
+        <StatusBar barStyle="light-content" backgroundColor="black" />
         <View style={styles.backgroundComponent}></View>
-
-        {/* NFC APP Title (on top of the background) */}
         <Text style={styles.title}>NFC APP</Text>
-
-        {/* Horizontal Scrollable Images */}
         <Slider />
-
-        {/* Image Grid with 10 images */}
         <ImageGrid />
       </View>
     </ScrollView>
@@ -62,10 +89,10 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start', // Align at the top
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    position: 'relative', // Stacking context
-    paddingTop: 160, // Push content down to give space
+    position: 'relative',
+    paddingTop: 160,
   },
   backgroundComponent: {
     position: 'absolute',
@@ -73,25 +100,25 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#1e2a47', // Dark blue color
-    borderTopLeftRadius: 40, // Smooth top left corner
-    borderTopRightRadius: 40, // Smooth top right corner
-    zIndex: -1, // Keep it in the background
+    backgroundColor: 'black',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
+    zIndex: -1,
   },
   title: {
-    fontSize: 30,
+    fontSize: 35,
     fontWeight: 'bold',
     color: 'black',
-    marginTop: 30, // Space between title and top
-    zIndex: 1, // Title should be above the background
+    marginTop: 10,
+    zIndex: 1,
     position: 'absolute',
-    top: 20, // Title's top margin
+    top: 20,
   },
   sliderContainer: {
-    width: 350, // Restrict the slider width
-    overflow: 'hidden', // Ensure images stay within bounds
-    alignItems: 'center', // Center the images horizontally
-    marginTop: -20, // Space between slider and title
+    width: 350,
+    overflow: 'hidden',
+    alignItems: 'center',
+    marginTop: -20,
   },
   sliderTitle: {
     fontSize: 25,
@@ -109,25 +136,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
   },
-  // New Styles for the Image Grid
   imageGridContainer: {
-    flexDirection: 'column', // Stack images vertically
-    alignItems: 'center', // Center images horizontally
-    marginTop: 30, // Space before grid
-    paddingBottom: 30, // Add space at the bottom of the screen
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginTop: 30,
+    paddingBottom: 30,
   },
   gridTitle: {
     fontSize: 25,
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: 20, // Space between title and grid
+    marginBottom: 20,
   },
   imageRow: {
-    flexDirection: 'row', // Display images side by side
-    justifyContent: 'space-between', // Space out images evenly
-    marginBottom: 20, // Space between rows
-    width: '100%', // Ensure the row spans the full width
-    paddingHorizontal: 20, // Horizontal padding for the row
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  emoji: {
+    fontSize: 50,
+    textAlign: 'center',
+    alignSelf: 'center',
+    marginTop: 50,
   },
 });
 
