@@ -17,10 +17,13 @@
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
     "react-native": "0.76.5",
+    "react-native-canvas": "^0.1.40",
     "react-native-nfc-manager": "^3.16.1",
     "react-native-safe-area-context": "^5.0.0",
     "react-native-screens": "^4.3.0",
-    "react-native-snap-carousel": "^3.9.1"
+    "react-native-snap-carousel": "^3.9.1",
+    "react-native-svg": "^15.10.1",
+    "react-native-view-shot": "^4.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
