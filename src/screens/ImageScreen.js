@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState, useEffect } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 import { View, Image, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import NfcManager, { NfcTech } from 'react-native-nfc-manager';
 
@@ -6,8 +6,8 @@ const ImageScreen = ({ route, navigation }) => {
   const { imageUrl } = route.params;
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
-  const [imageSize, setImageSize] = useState({ width: '100%', height: 300 }); // Başlangıç boyutları
-  const [imageResized, setImageResized] = useState(false); // Yeni state, görselin boyutlandırılıp boyutlandırılmadığını kontrol eder
+  const [imageSize, setImageSize] = useState({ width: 200, height: 416 }); // Boyutları 200x416 olarak ayarladık
+  const [imageResized, setImageResized] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -15,19 +15,6 @@ const ImageScreen = ({ route, navigation }) => {
       title: '',
     });
   }, [navigation]);
-
-  useEffect(() => {
-    NfcManager.start()
-      .then(() => {
-        console.log('NFC Manager started');
-      })
-      .catch((e) => console.log('Error starting NFC Manager:', e));
-
-    return () => {
-      NfcManager.stop();
-      NfcManager.setEventListener('stateChange', 'off');
-    };
-  }, []);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
@@ -41,31 +28,30 @@ const ImageScreen = ({ route, navigation }) => {
 
   const handleResizeImage = () => {
     if (!imageResized) {
-      setImageSize({ width: 200, height: 416 });
+      setImageSize({ width: 200, height: 416 }); // Boyutları burada da belirledik
       setImageResized(true);
     }
   };
 
   const handleNfcTransfer = async () => {
     try {
-      // NFC ile aktarım işlemi
-      await NfcManager.setEventListener('stateChange', 'on');
-      
-      // NFC yazma işlemi
-      await NfcManager.requestTechnology(NfcTech.NfcA);
-      const data = imageUrl; // Aktarılacak görselin URL'si
+      // NFC transfer işlemi
+      await NfcManager.requestTechnology(NfcTech.NfcA); // NFC teknolojisini kullan
+      const data = imageUrl; // Göndermek istediğiniz görselin URL'si
       const message = [{
         type: 'text',
         value: data,
       }];
       
-      await NfcManager.writeNfcTag(message);
-      Alert.alert('Başarılı', 'Görsel NFC ile aktarılıyor...');
+      // NFC etiketi yazma
+      await NfcManager.writeNfcTag(message); 
+      Alert.alert('Success', 'Image is being transferred via NFC...');
     } catch (error) {
-      console.log('NFC aktarım hatası: ', error);
-      Alert.alert('Hata', 'Görsel aktarımında bir hata oluştu.');
+      console.log('NFC transfer error: ', error);
+      Alert.alert('Error', 'There was an error during image transfer.');
     } finally {
       await NfcManager.setEventListener('stateChange', 'off');
+      await NfcManager.setEventListener('stateChange', 'on'); // Durum sıfırlama (isteğe bağlı)
     }
   };
 
@@ -74,7 +60,7 @@ const ImageScreen = ({ route, navigation }) => {
       <TouchableOpacity style={styles.imageContainer}>
         <Image
           source={{ uri: imageUrl }}
-          style={[styles.image, imageSize]} // Burada imageSize state'ini kullanıyoruz
+          style={[styles.image, imageSize]} // Boyutları imageSize state'inden alıyoruz
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
@@ -117,12 +103,12 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width: '100%',
-    height: 300,
+    height: 416, // Görselin boyutuna uygun bir container yüksekliği
     justifyContent: 'center',
     alignItems: 'center',
   },
   image: {
-    resizeMode: 'contain',
+    resizeMode: 'stretch', // Zorla boyutlara uydurmak için stretch
   },
   button: {
     width: '100%',
