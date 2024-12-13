@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import Svg, { Path } from 'react-native-svg';
 import NfcManager, { NfcTech } from 'react-native-nfc-manager';
@@ -72,56 +72,56 @@ const ImageScreen = ({ route, navigation }) => {
     setImageLoadError(false);
   };
 
-  console.log(imageUrl)
-
   const handleImageError = () => {
     setImageLoadError(true);
     setImageLoaded(false);
   };
 
   return (
-    <View style={styles.container}>
-  <TouchableOpacity ref={imageRef} style={styles.imageContainer}>
-    <Image
-      source={{ uri: imageUrl }}
-      style={styles.image}
-      onLoad={handleImageLoad}
-      onError={handleImageError}
-    />
-  </TouchableOpacity>
-
-  <TouchableOpacity style={styles.button} onPress={captureImage} disabled={!imageLoaded || imageLoadError}>
-    <Text style={styles.buttonText}>
-      Hadi Çizelim! <Text style={styles.emoji}>✏️</Text>
-    </Text>
-  </TouchableOpacity>
-
-  {svgPathData && (
-    <>
-      <Svg height="300" width="100%" viewBox="0 0 100 100" style={styles.capturedImage}>
-        <Path d={svgPathData} fill="none" stroke="white" strokeWidth="1" />
-      </Svg>
-      <TouchableOpacity style={styles.button} onPress={writeToNFC}>
-        <Text style={styles.buttonText}>
-          NFC'ye Aktar <Text style={styles.emoji}>📲</Text>
-        </Text>
+    <ScrollView style={styles.container}>
+      <TouchableOpacity ref={imageRef} style={styles.imageContainer}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
       </TouchableOpacity>
-    </>
-  )}
-</View>
+
+      {/* SVG image placed below the main image */}
+      {svgPathData && (
+        <>
+          <Svg height="400" width="100%" viewBox="0 0 100 100" style={styles.capturedImage}>
+            <Path d={svgPathData} fill="none" stroke="white" strokeWidth="1" />
+          </Svg>
+          <TouchableOpacity style={styles.button} onPress={writeToNFC}>
+            <Text style={styles.buttonText}>
+              Kılıfa Aktar <Text style={styles.emoji}>📲</Text>
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {/* Button for capturing image */}
+      {!svgPathData && (
+        <TouchableOpacity style={styles.button} onPress={captureImage} disabled={!imageLoaded || imageLoadError}>
+          <Text style={styles.buttonText}>
+            Hadi Çizelim! <Text style={styles.emoji}>✏️</Text>
+          </Text>
+        </TouchableOpacity>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: 'black',
   },
   imageContainer: {
     width: '100%',
-    height: '80%',
+    height: 300, // Adjusted for image display
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -132,14 +132,16 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
+    height: 50,
     paddingVertical: 15,
-    backgroundColor: '#FF6347',
+    backgroundColor: 'blue',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
   },
   buttonText: {
     fontSize: 20,
+    height: '100%',
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
   },
   capturedImage: {
     width: '100%',
-    height: 300,
+    height: 300, // Increased height for SVG display
     resizeMode: 'contain',
     marginTop: 20,
   },
